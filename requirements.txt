@@ -1,0 +1,6 @@
+const API_BASE = window.location.origin;
+flask==2.3.3
+flask-cors==4.0.0
+telethon==1.28.5
+openpyxl==3.1.2
+gunicorn==21.2.0

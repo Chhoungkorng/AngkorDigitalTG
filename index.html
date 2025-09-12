@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Telegram Scraper</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg1: #0f172a;
+            --bg2: #111827;
+            --card: #0b1220;
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --primary: #6366f1;
+            --primary-600: #5457e0;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warn: #f59e0b;
+            --border: #1f2937;
+        }
+        * { box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            margin: 0;
+            font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+            color: var(--text);
+            background: radial-gradient(90vw 90vh at 10% 10%, #0b1022 0%, #0b1022 30%, #0f172a 100%);
+            background-attachment: fixed;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .brand .logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            display: grid;
+            place-items: center;
+            box-shadow: 0 10px 30px rgba(99,102,241,.35);
+        }
+        .brand .title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #c7d2fe;
+        }
+        .auth-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--muted);
+        }
+        .badge {
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid var(--border);
+        }
+        .badge.ok {
+            color: #bbf7d0;
+            border-color: rgba(34,197,94,.35);
+            background: rgba(34,197,94,.08);
+        }
+        .badge.err {
+            color: #fecaca;
+            border-color: rgba(239,68,68,.35);
+            background: rgba(239,68,68,.08);
+        }
+        .grid {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: repeat(12, 1fr);
+        }
+        .col-8 { grid-column: span 8; }
+        .col-4 { grid-column: span 4; }
+        @media (max-width: 900px) {
+            .col-8, .col-4 { grid-column: 1 / -1; }
+        }
+        .card {
+            background: linear-gradient(180deg, rgba(16,24,40,.85) 0%, rgba(13,18,33,.85) 100%);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px 18px 16px 18px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 10px 30px rgba(0,0,0,.25);
+        }
+        .card h2 {
+            margin: 0 0 12px 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: .2px;
+            color: #e0e7ff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sub {
+            color: var(--muted);
+            font-size: .88rem;
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            font-size: .9rem;
+            color: #cbd5e1;
+            margin-bottom: 6px;
+        }
+        input[type="text"], input[type="number"], input[type="password"], select {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: #0b1020;
+            color: var(--text);
+            outline: none;
+            transition: .2s border, .2s box-shadow;
+            font-size: .95rem;
+        }
+        input:focus, select:focus {
+            border-color: rgba(99,102,241,.6);
+            box-shadow: 0 0 0 3px rgba(99,102,241,.15);
+        }
+        .row {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 12px;
+        }
+        .row > .span-4 { grid-column: span 4; }
+        .row > .span-6 { grid-column: span 6; }
+        .row > .span-12 { grid-column: 1 / -1; }
+        @media (max-width: 700px) {
+            .row > .span-4, .row > .span-6 { grid-column: 1 / -1; }
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            font-weight: 600;
+            color: #e5e7eb;
+            background: #111827;
+            font-size: .9rem;
+            text-decoration: none;
+        }
+        .btn.primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-600) 100%);
+            box-shadow: 0 10px 25px rgba(99,102,241,.35);
+        }
+        .btn.secondary {
+            background: #0b1020;
+            border-color: var(--border);
+        }
+        .btn.warn {
+            background: #1f2937;
+            border-color: #334155;
+            color: #f59e0b;
+        }
+        .btn.danger {
+            background: #1f2937;
+            border-color: #334155;
+            color: #fecaca;
+        }
+        .btn:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+        }
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .progress {
+            margin-top: 10px;
+            background: #0b1020;
+            border-radius: 999px;
+            height: 10px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #22c55e, #84cc16, #eab308);
+            transition: width .3s;
+        }
+        .status {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: .9rem;
+        }
+        .kpi {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .kpi .pill {
+            padding: 10px;
+            border-radius: 12px;
+            background: #0b1020;
+            border: 1px solid var(--border);
+            color: #c7d2fe;
+            text-align: center;
+        }
+        .kpi .num {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #f8fafc;
+        }
+        .list {
+            background: #0b1020;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            max-height: 380px;
+            overflow: auto;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: .92rem;
+            line-height: 1.4;
+        }
+        .empty {
+            color: var(--muted);
+            text-align: center;
+            padding: 20px;
+        }
+        .hl {
+            color: #a5b4fc;
+        }
+        .notice {
+            background: rgba(59,130,246,.08);
+            border: 1px solid rgba(59,130,246,.25);
+            color: #cfe0ff;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: .9rem;
+        }
+        .split {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 10px;
+        }
+        .hidden { display: none !important; }
+        .data-type-info {
+            background: rgba(34,197,94,.08);
+            border: 1px solid rgba(34,197,94,.25);
+            color: #bbf7d0;
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-top: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="brand">
+                <div class="logo"><i class="fa-brands fa-telegram" style="color:white"></i></div>
+                <div class="title">Telegram Scraper</div>
+            </div>
+            <div class="auth-status">
+                <span id="authBadge" class="badge err">Not Authenticated</span>
+                <button id="logoutBtn" class="btn danger hidden"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
+            </div>
+        </header>
+
+        <!-- Authentication Card -->
+        <section id="authCard" class="card col-8" style="margin-bottom: 14px;">
+            <h2><i class="fa-solid fa-key"></i> Authenticate with Telegram</h2>
+            <div class="sub">Enter your Telegram API credentials and phone number to receive a verification code. You can get API ID/Hash at my.telegram.org.</div>
+            <div class="row" id="authStep1">
+                <div class="span-4">
+                    <label for="apiId">API ID</label>
+                    <input type="number" id="apiId" placeholder="e.g. 123456" />
+                </div>
+                <div class="span-6">
+                    <label for="apiHash">API Hash</label>
+                    <input type="text" id="apiHash" placeholder="e.g. abcd1234efgh5678ijkl9012mnop3456" />
+                </div>
+                <div class="span-6">
+                    <label for="phone">Phone Number (E.164)</label>
+                    <input type="text" id="phone" placeholder="e.g. +85512345678" />
+                </div>
+                <div class="span-12">
+                    <button id="sendCodeBtn" class="btn primary"><i class="fa-solid fa-paper-plane"></i> Send Verification Code</button>
+                </div>
+            </div>
+            <div class="row hidden" id="authStep2">
+                <div class="span-4">
+                    <label for="code">Verification Code</label>
+                    <input type="text" id="code" placeholder="Code from Telegram" />
+                </div>
+                <div class="span-6">
+                    <label for="password">Two-Factor Password (only if enabled)</label>
+                    <input type="password" id="password" placeholder="Optional for 2FA accounts" />
+                </div>
+                <div class="span-12">
+                    <div class="notice" id="codeNotice">Enter the code you received on Telegram. If your account has 2FA, enter your password too.</div>
+                </div>
+                <div class="span-12">
+                    <button id="verifyBtn" class="btn primary"><i class="fa-solid fa-circle-check"></i> Verify & Login</button>
+                </div>
+            </div>
+            <div class="progress hidden" id="authProgress"><div class="bar" id="authBar"></div></div>
+            <div class="status" id="authStatus"></div>
+        </section>
+
+        <div class="grid">
+            <!-- Scraping Panel -->
+            <section class="card col-8" id="scrapeCard">
+                <h2><i class="fa-solid fa-download"></i> Data Scraping</h2>
+                <div class="row">
+                    <div class="span-12">
+                        <label for="groupInput">Telegram Group Link or Username</label>
+                        <input type="text" id="groupInput" placeholder="@group or https://t.me/group" />
+                    </div>
+                    <div class="span-6">
+                        <label for="scrapeType">Data Type</label>
+                        <select id="scrapeType">
+                            <option value="Phone Numbers">Phone Numbers Only</option>
+                            <option value="Usernames">Usernames Only</option>
+                            <option value="User IDs">User IDs (Telegram Web Links)</option>
+                            <option value="All Data">All Available Data</option>
+                        </select>
+                        <div id="dataTypeInfo" class="data-type-info"></div>
+                    </div>
+                    <div class="span-12">
+                        <div class="split">
+                            <div class="toolbar">
+                                <button class="btn primary" id="scrapeBtn"><i class="fa-solid fa-play"></i> Start Scraping</button>
+                                <span id="gateHint" class="badge err hidden">Login required</span>
+                            </div>
+                            <div class="status" id="statusText">Ready</div>
+                        </div>
+                        <div class="progress" id="progressContainer"><div class="bar" id="progressFill"></div></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tools Panel -->
+            <section class="card col-4" id="toolsCard">
+                <h2><i class="fa-solid fa-screwdriver-wrench"></i> Processing</h2>
+                <div class="toolbar" style="margin-bottom: 8px;">
+                    <button class="btn secondary" data-action="remove_duplicates"><i class="fa-solid fa-clone"></i> Remove Duplicates</button>
+                    <button class="btn secondary" id="openWord"><i class="fa-solid fa-filter"></i> Remove Word</button>
+                </div>
+                <div class="toolbar" style="margin-bottom: 8px;">
+                    <button class="btn secondary" id="openSim"><i class="fa-solid fa-sim-card"></i> Filter by SIM</button>
+                    <button class="btn secondary" data-action="filter_855"><i class="fa-solid fa-phone"></i> Filter 855</button>
+                </div>
+                <div class="toolbar" style="margin-bottom: 8px;">
+                    <button class="btn secondary" data-action="find_facebook"><i class="fa-brands fa-facebook"></i> Find Facebook</button>
+                    <button class="btn secondary" data-action="filter_fb_id"><i class="fa-solid fa-id-card"></i> FB ID Only</button>
+                </div>
+                <div class="toolbar" style="margin-bottom: 8px;">
+                    <button class="btn secondary" data-action="extract_ids"><i class="fa-solid fa-hashtag"></i> Extract IDs</button>
+                    <button class="btn secondary" data-action="convert_to_web"><i class="fa-solid fa-link"></i> ID → Web Links</button>
+                </div>
+                <div class="toolbar">
+                    <button class="btn primary" id="exportTxt"><i class="fa-regular fa-file-lines"></i> Export TXT</button>
+                    <button class="btn primary" id="exportXlsx"><i class="fa-regular fa-file-excel"></i> Export Excel</button>
+                </div>
+                <div class="status" id="toolsStatus"></div>
+            </section>
+        </div>
+
+        <!-- Data Section -->
+        <section class="card" id="dataCard" style="margin-top: 12px;">
+            <div class="split">
+                <h2><i class="fa-solid fa-database"></i> Scraped Data</h2>
+                <div class="kpi">
+                    <div class="pill">Total <div class="num" id="totalCount">0</div></div>
+                    <div class="pill">Unique <div class="num" id="uniqueCount">0</div></div>
+                    <div class="pill">Last Update <div class="num" id="lastUpdate">-</div></div>
+                </div>
+            </div>
+            <div class="list" id="dataDisplay"><div class="empty">No data yet. Start by authenticating and scraping a group.</div></div>
+        </section>
+
+        <!-- Remove Word Modal -->
+        <section id="wordModal" class="card hidden" style="position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, 92vw); z-index: 10;">
+            <div class="split" style="margin-bottom: 8px;">
+                <h2><i class="fa-solid fa-ban"></i> Remove Lines Containing</h2>
+                <button class="btn danger" id="closeWord"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <label for="wordInput">Word</label>
+            <input id="wordInput" type="text" placeholder="Enter a word to filter out (case-insensitive)" />
+            <div style="margin-top: 10px;" class="split">
+                <div class="notice">This will remove any entries that contain the provided word.</div>
+                <button class="btn primary" id="applyWord"><i class="fa-solid fa-wand-magic-sparkles"></i> Apply</button>
+            </div>
+        </section>
+
+        <!-- SIM Modal -->
+        <section id="simModal" class="card hidden" style="position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(520px, 92vw); z-index: 10;">
+            <div class="split" style="margin-bottom: 8px;">
+                <h2><i class="fa-solid fa-sim-card"></i> Filter by SIM</h2>
+                <button class="btn danger" id="closeSim"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <label for="simSelect">SIM Company</label>
+            <select id="simSelect">
+                <option value="Smart">Smart</option>
+                <option value="Cellcard">Cellcard</option>
+                <option value="Metfone">Metfone</option>
+            </select>
+            <div style="margin-top: 10px;" class="split">
+                <div class="notice">Filters by known phone prefixes for the selected company.</div>
+                <button class="btn primary" id="applySim"><i class="fa-solid fa-filter"></i> Apply</button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        let scrapedData = [];
+        let isProcessing = false;
+        let isAuthenticated = false;
+
+        // Helpers
+        const $ = (sel) => document.querySelector(sel);
+        const $$ = (sel) => document.querySelectorAll(sel);
+        const show = (el) => el.classList.remove('hidden');
+        const hide = (el) => el.classList.add('hidden');
+        const setBar = (el, val) => el.style.width = Math.max(0, Math.min(100, val)) + '%';
+        const now = () => new Date().toLocaleTimeString();
+
+        // Data type descriptions
+        const dataTypeDescriptions = {
+            "Phone Numbers": "Extracts visible phone numbers from users who have made them public",
+            "Usernames": "Extracts public usernames (@username format)",
+            "User IDs": "Generates Telegram web links (https://web.telegram.org/k/#ID) for all users",
+            "All Data": "Combines ID, username, phone, and name information for each user"
+        };
+
+        function setAuthUI(state, info) {
+            isAuthenticated = !!state;
+            if (isAuthenticated) {
+                $('#authBadge').textContent = `Authenticated${info?.username ? ' @' + info.username : ''}`;
+                $('#authBadge').classList.add('ok');
+                $('#authBadge').classList.remove('err');
+                show($('#logoutBtn'));
+                hide($('#authCard'));
+                hide($('#gateHint'));
+            } else {
+                $('#authBadge').textContent = 'Not Authenticated';
+                $('#authBadge').classList.remove('ok');
+                $('#authBadge').classList.add('err');
+                show($('#authCard'));
+                show($('#gateHint'));
+                hide($('#logoutBtn'));
+            }
+        }
+
+        function updateDataTypeInfo() {
+            const scrapeType = $('#scrapeType').value;
+            const infoEl = $('#dataTypeInfo');
+            infoEl.textContent = dataTypeDescriptions[scrapeType] || '';
+        }
+
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/auth/status');
+                const data = await res.json();
+                if (data.authenticated) {
+                    setAuthUI(true, data.user_info);
+                } else {
+                    setAuthUI(false);
+                }
+            } catch (e) {
+                setAuthUI(false);
+            }
+        }
+
+        async function checkAuth() {
+            try {
+                $('#authStatus').textContent = 'Checking authentication...';
+                const res = await fetch('/api/auth/status');
+                const data = await res.json(); 
+                if (data.authenticated) {
+                setAuthUI(true, data.user_info);
+                $('#authStatus').textContent = 'Authenticated!';
+                } else {
+                setAuthUI(false);
+                $('#authStatus').textContent = 'Please authenticate';
+                }
+            } catch (e) {
+                setAuthUI(false);
+                $('#authStatus').textContent = 'Connection error';
+            }
+        }
+
+        // Authentication flow
+        $('#sendCodeBtn').addEventListener('click', async () => {
+            const api_id = $('#apiId').value.trim();
+            const api_hash = $('#apiHash').value.trim();
+            const phone = $('#phone').value.trim();
+            if (!api_id || !api_hash || !phone) {
+                $('#authStatus').textContent = 'API ID, API Hash, and phone are required.';
+                return;
+            }
+            $('#authStatus').textContent = 'Sending code...';
+            show($('#authProgress'));
+            setBar($('#authBar'), 25);
+            $('#sendCodeBtn').disabled = true;
+            try {
+                const res = await fetch('/api/auth/send_code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_id, api_hash, phone })
+                });
+                const out = await res.json();
+                if (!res.ok) throw new Error(out.error || 'Failed to send code');
+                setBar($('#authBar'), 60);
+                $('#authStatus').textContent = 'Code sent. Check your Telegram app and enter the code below.';
+                hide($('#authStep1'));
+                show($('#authStep2'));
+                setBar($('#authBar'), 80);
+            } catch (err) {
+                $('#authStatus').textContent = err.message;
+            } finally {
+                $('#sendCodeBtn').disabled = false;
+                setBar($('#authBar'), 100);
+                setTimeout(() => hide($('#authProgress')), 500);
+            }
+        });
+
+        $('#verifyBtn').addEventListener('click', async () => {
+            const code = $('#code').value.trim();
+            const password = $('#password').value.trim();
+            if (!code) {
+                $('#authStatus').textContent = 'Verification code is required.';
+                return;
+            }
+            $('#authStatus').textContent = 'Verifying...';
+            show($('#authProgress'));
+            setBar($('#authBar'), 30);
+            $('#verifyBtn').disabled = true;
+            try {
+                const res = await fetch('/api/auth/verify_code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code, password: password || undefined })
+                });
+                const out = await res.json();
+                if (!res.ok) throw new Error(out.error || 'Verification failed');
+                setBar($('#authBar'), 80);
+                $('#authStatus').textContent = out.message || 'Authenticated';
+                setAuthUI(true, out.user_info || {});
+            } catch (err) {
+                $('#authStatus').textContent = err.message;
+                if (err.message.includes('Two-factor')) {
+                    show($('#password'));
+                }
+            } finally {
+                $('#verifyBtn').disabled = false;
+                setBar($('#authBar'), 100);
+                setTimeout(() => hide($('#authProgress')), 500);
+            }
+        });
+
+        $('#logoutBtn').addEventListener('click', async () => {
+            $('#logoutBtn').disabled = true;
+            try {
+                const res = await fetch('/api/auth/logout', { method: 'POST' });
+                await res.json();
+            } catch (_) {}
+            setAuthUI(false);
+            $('#statusText').textContent = 'Logged out';
+            $('#dataDisplay').innerHTML = '<div class="empty">Logged out. Authenticate again to continue.</div>';
+            $('#totalCount').textContent = '0';
+            $('#uniqueCount').textContent = '0';
+            $('#lastUpdate').textContent = '-';
+            scrapedData = [];
+            $('#logoutBtn').disabled = false;
+            hide($('#progressContainer'));
+        });
+
+        // Scraping
+        $('#scrapeBtn').addEventListener('click', async () => {
+            if (!isAuthenticated) {
+                $('#statusText').textContent = 'Please login to Telegram first.';
+                return;
+            }
+            const group = $('#groupInput').value.trim();
+            const scrape_type = $('#scrapeType').value;
+            if (!group) {
+                $('#statusText').textContent = 'Please provide a group link or username.';
+                return;
+            }
+            $('#scrapeBtn').disabled = true;
+            show($('#progressContainer'));
+            setBar($('#progressFill'), 10);
+            $('#statusText').textContent = 'Initializing...';
+            try {
+                const res = await fetch('/api/scrape', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ group, scrape_type })
+                });
+                const out = await res.json();
+                if (!res.ok) throw new Error(out.error || 'Failed to start scraping');
+                pollStatus();
+            } catch (err) {
+                $('#statusText').textContent = err.message;
+                hide($('#progressContainer'));
+            } finally {
+                $('#scrapeBtn').disabled = false;
+            }
+        });
+
+        async function pollStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const st = await res.json();
+                setBar($('#progressFill'), st.progress || 0);
+                $('#statusText').textContent = st.status || 'Working...';
+                if (!st.is_scraping) {
+                    if (Array.isArray(st.result)) {
+                        scrapedData = st.result;
+                        displayData(scrapedData);
+                        $('#statusText').textContent = `Done. ${scrapedData.length} items.`;
+                    }
+                    hide($('#progressContainer'));
+                } else {
+                    setTimeout(pollStatus, 900);
+                }
+            } catch (e) {
+                $('#statusText').textContent = 'Failed to get status update';
+                hide($('#progressContainer'));
+            }
+        }
+
+        function displayData(data) {
+            const el = $('#dataDisplay');
+            if (!data || data.length === 0) {
+                el.innerHTML = '<div class="empty">No data found.</div>';
+            } else {
+                if (typeof data[0] === 'object') {
+                    el.innerHTML = data.map((item, i) => {
+                        const fields = [
+                            item.id ? `<span class="hl">${i + 1}.</span> ID: ${item.id}` : '',
+                            item.username ? `Username: ${item.username}` : '',
+                            item.phone ? `Phone: ${item.phone}` : '',
+                            item.first_name ? `First Name: ${item.first_name}` : '',
+                            item.last_name ? `Last Name: ${item.last_name}` : ''
+                        ].filter(Boolean).join(', ');
+                        return `<div>${fields}</div>`;
+                    }).join('');
+                } else {
+                    el.innerHTML = data.map((v, i) => `<div><span class="hl">${i + 1}.</span> ${v}</div>`).join('');
+                }
+            }
+            $('#totalCount').textContent = data.length.toString();
+            $('#uniqueCount').textContent = (typeof data[0] === 'object' ? new Set(data.map(item => item.id)).size : new Set(data).size).toString();
+            $('#lastUpdate').textContent = now();
+        }
+
+        // Processing
+        $$('#toolsCard [data-action]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const type = btn.getAttribute('data-action');
+                await processData(type);
+            });
+        });
+
+        async function processData(type, param = '') {
+            if (!isAuthenticated) {
+                $('#toolsStatus').textContent = 'Login required.';
+                return;
+            }
+            if (!scrapedData.length) {
+                $('#toolsStatus').textContent = 'No data to process.';
+                return;
+            }
+            if (isProcessing) {
+                $('#toolsStatus').textContent = 'Processing already running.';
+                return;
+            }
+            isProcessing = true;
+            $('#toolsStatus').textContent = 'Processing...';
+            try {
+                const res = await fetch('/api/process', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type, data: scrapedData, param })
+                });
+                const out = await res.json();
+                if (!res.ok) throw new Error(out.error || 'Processing failed');
+                scrapedData = out.result || [];
+                displayData(scrapedData);
+                $('#toolsStatus').textContent = `Done. ${out.removed || 0} removed.`;
+            } catch (err) {
+                $('#toolsStatus').textContent = err.message;
+            } finally {
+                isProcessing = false;
+            }
+        }
+
+        // Modals
+        $('#openWord').addEventListener('click', () => {
+            show($('#wordModal'));
+            $('#wordInput').focus();
+        });
+        $('#closeWord').addEventListener('click', () => hide($('#wordModal')));
+        $('#applyWord').addEventListener('click', async () => {
+            const word = $('#wordInput').value.trim();
+            if (!word) return;
+            hide($('#wordModal'));
+            await processData('remove_word', word);
+        });
+
+        $('#openSim').addEventListener('click', () => {
+            show($('#simModal'));
+            $('#simSelect').focus();
+        });
+        $('#closeSim').addEventListener('click', () => hide($('#simModal')));
+        $('#applySim').addEventListener('click', async () => {
+            const sim = $('#simSelect').value;
+            hide($('#simModal'));
+            await processData('filter_sim', sim);
+        });
+
+        // Export
+        $('#exportTxt').addEventListener('click', async () => {
+            if (!isAuthenticated || !scrapedData.length) {
+                $('#toolsStatus').textContent = isAuthenticated ? 'No data to export.' : 'Login required.';
+                return;
+            }
+            try {
+                const res = await fetch('/api/export', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: scrapedData, format: 'txt', filename: 'scraped_data' })
+                });
+                const out = await res.json();
+                if (!res.ok) throw new Error(out.error || 'Export failed');
+                const blob = new Blob([out.content], { type: 'text/plain' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = out.filename;
+                a.click();
+                window.URL.revokeObjectURL(url);
+                $('#toolsStatus').textContent = 'Exported as TXT.';
+            } catch (err) {
+                $('#toolsStatus').textContent = err.message;
+            }
+        });
+
+        $('#exportXlsx').addEventListener('click', async () => {
+            if (!isAuthenticated || !scrapedData.length) {
+                $('#toolsStatus').textContent = isAuthenticated ? 'No data to export.' : 'Login required.';
+                return;
+            }
+            try {
+                const res = await fetch('/api/export', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: scrapedData, format: 'xlsx', filename: 'scraped_data' })
+                });
+                if (!res.ok) throw new Error('Export failed');
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'scraped_data.xlsx';
+                a.click();
+                window.URL.revokeObjectURL(url);
+                $('#toolsStatus').textContent = 'Exported as Excel.';
+            } catch (err) {
+                $('#toolsStatus').textContent = err.message;
+            }
+        });
+
+        // Initialize
+        $('#scrapeType').addEventListener('change', updateDataTypeInfo);
+        updateDataTypeInfo();
+        checkAuth();
+    </script>
+</body>
+</html>
