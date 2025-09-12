@@ -14,6 +14,8 @@ import json
 from datetime import datetime
 import logging
 from werkzeug.middleware.proxy_fix import ProxyFix
+import tempfile
+import shutil
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -24,7 +26,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 CORS(app)
 
 # Use environment variable for secret key
-app.secret_key = os.environ.get('SECRET_KEY', 'fallback-secret-key-change-in-production')
+app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24).hex())
 
 # Global variables for client and scraping status
 clients = {}  # Store multiple client sessions
@@ -42,13 +44,20 @@ def get_session_id():
     return session['session_id']
 
 def get_session_file(session_id):
-    """Get session file path for a specific session"""
-    return f"sessions/{session_id}"
+    """Get session file path for a specific session - using temp directory for Azure"""
+    # Use temp directory that Azure provides
+    temp_dir = tempfile.gettempdir()
+    sessions_dir = os.path.join(temp_dir, 'telegram_sessions')
+    if not os.path.exists(sessions_dir):
+        os.makedirs(sessions_dir, exist_ok=True)
+    return os.path.join(sessions_dir, f"{session_id}")
 
 def ensure_sessions_dir():
-    """Ensure sessions directory exists"""
-    if not os.path.exists('sessions'):
-        os.makedirs('sessions')
+    """Ensure sessions directory exists in temp directory"""
+    temp_dir = tempfile.gettempdir()
+    sessions_dir = os.path.join(temp_dir, 'telegram_sessions')
+    if not os.path.exists(sessions_dir):
+        os.makedirs(sessions_dir, exist_ok=True)
 
 def get_or_create_loop():
     """Get or create the global event loop"""
@@ -74,7 +83,7 @@ def run_async(coro):
     """Run an async coroutine in the global event loop"""
     loop = get_or_create_loop()
     future = asyncio.run_coroutine_threadsafe(coro, loop)
-    return future.result()
+    return future.result(timeout=30)  # Add timeout for Azure
 
 async def create_client(api_id, api_hash, session_id):
     """Create a new Telegram client"""
@@ -163,7 +172,10 @@ async def logout_client(session_id):
         # Remove session file
         session_file = get_session_file(session_id)
         if os.path.exists(f"{session_file}.session"):
-            os.remove(f"{session_file}.session")
+            try:
+                os.remove(f"{session_file}.session")
+            except:
+                pass  # Ignore cleanup errors
         
         return True, "Logged out successfully"
     except Exception as e:
@@ -197,8 +209,8 @@ async def scrape_data(group, scrape_type, session_id):
         scraping_status["status"] = "Fetching participants..."
         scraping_status["progress"] = 40
         
-        # Get participants
-        participants = await client.get_participants(entity, limit=None)
+        # Get participants with a reasonable limit for Azure timeout
+        participants = await client.get_participants(entity, limit=5000)
         
         # Update status
         scraping_status["status"] = "Processing data..."
@@ -616,5 +628,6 @@ atexit.register(cleanup)
 
 if __name__ == '__main__':
     ensure_sessions_dir()
-    port = int(os.environ.get('PORT', 8000))
+    # Use environment variable for port, defaulting to 80 for Azure
+    port = int(os.environ.get('PORT', 80))
     app.run(host='0.0.0.0', port=port, debug=False)
